@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:15.4-alpine}
+    container_name: tandem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tandem}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-tandem}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tandem} -d ${POSTGRES_DB:-tandem}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tandem-net
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.2-alpine}
+    container_name: tandem-redis
+    restart: unless-stopped
+    command: ["redis-server"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tandem-net
+
+  minio:
+    image: ${MINIO_IMAGE:-minio/minio:RELEASE.2024-05-27T19-17-46Z}
+    container_name: tandem-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-tandem}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me_minio}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tandem-net
+
+  minio-init:
+    image: minio/mc:RELEASE.2024-11-21T17-21-54Z
+    container_name: tandem-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-tandem} ${MINIO_ROOT_PASSWORD:-change_me_minio};
+      mc mb --ignore-existing local/${MINIO_BUCKET:-tandem-files};
+      exit 0;
+      "
+    networks:
+      - tandem-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  tandem-net:
+    driver: bridge

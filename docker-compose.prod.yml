@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE_PROD:-postgres:15.4-alpine}
+    container_name: tandem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tandem-net
+
+  redis:
+    image: ${REDIS_IMAGE_PROD:-redis:7.2-alpine}
+    container_name: tandem-redis
+    restart: unless-stopped
+    command: ["redis-server"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tandem-net
+
+  minio:
+    image: ${MINIO_IMAGE_PROD:-minio/minio:RELEASE.2024-05-27T19-17-46Z}
+    container_name: tandem-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - tandem-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  tandem-net:
+    driver: bridge
