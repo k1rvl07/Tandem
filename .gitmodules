@@ -1,0 +1,6 @@
+[submodule "tandem-backend"]
+	path = tandem-backend
+	url = git@github.com:k1rvl07/tandem-backend.git
+[submodule "tandem-frontend"]
+	path = tandem-frontend
+	url = git@github.com:k1rvl07/tandem-frontend.git

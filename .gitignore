@@ -2,10 +2,6 @@
 .env
 *.env.local
 
-# Embedded independent repos (not tracked by root)
-tandem-backend/
-tandem-frontend/
-
 # Config / Docs
 AGENTS.md
 
