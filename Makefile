@@ -63,5 +63,13 @@ test: ## Run backend tests
 	cd tandem-backend && go test ./...
 
 .PHONY: swag
-swag: ## Generate Swagger docs (backend)
-	cd tandem-backend && swag init -g ./cmd/server/main.go -o ./docs
+swag: ## Generate OpenAPI 3.1 docs (backend)
+	cd tandem-backend && swag init -g ./cmd/server/main.go -o ./docs --v3.1
+
+.PHONY: dev
+dev: ## Launch dev environment (zellij: app/infra logs + DB/API TUIs)
+	@fish scripts/dev.fish
+
+.PHONY: dev-down
+dev-down: ## Stop app processes and free app ports (8080/5173)
+	@fuser -k 8080/tcp 5173/tcp 2>/dev/null || true

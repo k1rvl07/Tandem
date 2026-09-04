@@ -1,0 +1,49 @@
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="tab-bar"
+        }
+        children
+        pane size=1 borderless=true {
+            plugin location="status-bar"
+        }
+    }
+    tab name="frontend" {
+        pane command="fish" {
+            args "-c" "cd tandem-frontend && npm run dev"
+        }
+    }
+    tab name="backend" {
+        pane command="fish" {
+            args "-c" "cd tandem-backend && air"
+        }
+    }
+    tab name="postgres" {
+        pane command="fish" {
+            args "-c" "docker compose logs -f postgres"
+        }
+    }
+    tab name="redis" {
+        pane command="fish" {
+            args "-c" "docker compose logs -f redis"
+        }
+    }
+    tab name="minio" {
+        pane command="fish" {
+            args "-c" "docker compose logs -f minio"
+        }
+    }
+    tab name="sabiql" {
+        pane command="sabiql"
+    }
+    tab name="redis-tui" {
+        pane command="redis-tui" {
+            args "-h" "localhost" "-p" "6379" "-a" "__REDIS_PASS__"
+        }
+    }
+    tab name="openapi-tui" {
+        pane command="openapi-tui" {
+            args "-i" "tandem-backend/docs/swagger.json"
+        }
+    }
+}
