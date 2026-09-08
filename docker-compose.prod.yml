@@ -11,6 +11,11 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - tandem-net
 
@@ -23,6 +28,11 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - tandem-net
 
@@ -39,6 +49,51 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
+    networks:
+      - tandem-net
+
+  backend:
+    image: ghcr.io/k1rvl07/tandem-backend:${TAG:-latest}
+    container_name: tandem-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      APP_PORT: "8080"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      REDIS_ADDR: redis:6379
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-tandem-files}
+      MINIO_USE_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_TTL: ${JWT_TTL:-24h}
+      ADMIN_LOGIN: ${ADMIN_LOGIN}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      BCRYPT_COST: ${BCRYPT_COST:-12}
+    expose:
+      - "8080"
+    networks:
+      - tandem-net
+
+  frontend:
+    image: ghcr.io/k1rvl07/tandem-frontend:${TAG:-latest}
+    container_name: tandem-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
     networks:
       - tandem-net
 

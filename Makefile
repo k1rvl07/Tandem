@@ -6,7 +6,11 @@ else
 	COMPOSE_FILE := docker-compose.prod.yml
 endif
 
-COMPOSE := docker compose -f $(COMPOSE_FILE)
+COMPOSE = docker compose -f $(COMPOSE_FILE)
+
+POSTGRES_USER ?= $(shell grep '^POSTGRES_USER=' .env 2>/dev/null | cut -d= -f2-)
+POSTGRES_PASSWORD ?= $(shell grep '^POSTGRES_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)
+POSTGRES_DB ?= $(shell grep '^POSTGRES_DB=' .env 2>/dev/null | cut -d= -f2-)
 
 .PHONY: help
 help: ## Show available commands
@@ -61,6 +65,27 @@ build: ## Build backend and frontend
 .PHONY: test
 test: ## Run backend tests
 	cd tandem-backend && go test ./...
+
+.PHONY: test-integration
+test-integration: ## Run backend repo tests against local Postgres (require TEST_DATABASE_URL or .env)
+	cd tandem-backend && \
+		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable" \
+		go test ./internal/repository/ -count=1
+
+.PHONY: prod-up
+prod-up: COMPOSE_FILE := docker-compose.prod.yml
+prod-up: ## Start production stack (infra + apps)
+	$(COMPOSE) up -d
+
+.PHONY: prod-down
+prod-down: COMPOSE_FILE := docker-compose.prod.yml
+prod-down: ## Stop production stack
+	$(COMPOSE) down
+
+.PHONY: build-images
+build-images: ## Build backend and frontend Docker images
+	docker build -t ghcr.io/k1rvl07/tandem-backend:latest tandem-backend
+	docker build -t ghcr.io/k1rvl07/tandem-frontend:latest tandem-frontend
 
 .PHONY: swag
 swag: ## Generate OpenAPI 3.1 docs (backend)
