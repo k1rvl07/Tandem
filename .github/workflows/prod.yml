@@ -1,0 +1,109 @@
+name: prod
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: generate swagger docs
+        run: |
+          go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
+          swag init -g ./cmd/server/main.go -o ./docs --v3.1
+        working-directory: tandem-backend
+      - name: build binary artifact
+        run: |
+          CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o tandem-backend ./cmd/server
+        working-directory: tandem-backend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tandem-backend
+          path: tandem-backend/tandem-backend
+      - name: docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/k1rvl07/tandem-backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_tag}}
+      - name: login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: tandem-backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tandem-frontend/package-lock.json
+      - run: npm ci
+        working-directory: tandem-frontend
+      - run: npm run build
+        working-directory: tandem-frontend
+      - name: package dist artifact
+        run: tar -czf tandem-frontend.tar.gz -C dist .
+        working-directory: tandem-frontend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tandem-frontend
+          path: tandem-frontend/tandem-frontend.tar.gz
+      - name: docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/k1rvl07/tandem-frontend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_tag}}
+      - name: login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: tandem-frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
