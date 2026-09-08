@@ -1,0 +1,81 @@
+name: e2e
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15.4-alpine
+        env:
+          POSTGRES_USER: tandem
+          POSTGRES_PASSWORD: tandem
+          POSTGRES_DB: tandem
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tandem -d tandem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      minio:
+        image: minio/minio:RELEASE.2024-05-27T19-17-46Z
+        env:
+          MINIO_ROOT_USER: tandem
+          MINIO_ROOT_PASSWORD: tandem
+        command: server /data --console-address ":9001"
+        ports:
+          - 9000:9000
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: tandem
+      POSTGRES_PASSWORD: tandem
+      POSTGRES_DB: tandem
+      REDIS_ADDR: 127.0.0.1:6379
+      MINIO_ENDPOINT: 127.0.0.1:9000
+      MINIO_ROOT_USER: tandem
+      MINIO_ROOT_PASSWORD: tandem
+      MINIO_BUCKET: tandem-files
+      JWT_SECRET: ci_secret
+      ADMIN_LOGIN: admin
+      ADMIN_PASSWORD: adminpass
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: generate swagger docs
+        run: |
+          go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
+          swag init -g ./cmd/server/main.go -o ./docs --v3.1
+        working-directory: tandem-backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tandem-frontend/package-lock.json
+      - run: npm ci
+        working-directory: tandem-frontend
+      - name: install chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: tandem-frontend
+      - name: run e2e tests
+        run: npm run test:e2e
+        working-directory: tandem-frontend
