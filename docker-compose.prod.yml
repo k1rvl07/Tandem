@@ -23,13 +23,13 @@ services:
     image: ${REDIS_IMAGE_PROD:-redis:7.2-alpine}
     container_name: tandem-redis
     restart: unless-stopped
-    command: ["redis-server"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a '${REDIS_PASSWORD}' ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,11 +72,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       MINIO_ENDPOINT: minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET:-tandem-files}
       MINIO_USE_SSL: "false"
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:8080}
+      MINIO_PUBLIC_USE_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL:-24h}
       ADMIN_LOGIN: ${ADMIN_LOGIN}

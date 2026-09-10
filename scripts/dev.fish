@@ -4,8 +4,8 @@ cd $ROOT
 
 fuser -k 8080/tcp 5173/tcp 2>/dev/null
 
-docker compose up -d
-docker compose ps
+docker compose --env-file .env.dev up -d
+docker compose --env-file .env.dev ps
 
 cd tandem-backend
 swag init -g ./cmd/server/main.go -o ./docs --v3.1
@@ -18,7 +18,7 @@ set -l PG_PORT ""
 set -l PG_DB ""
 set -l REDIS_PASS ""
 
-for line in (grep -E '^(POSTGRES_USER|POSTGRES_PASSWORD|POSTGRES_HOST|POSTGRES_PORT|POSTGRES_DB|REDIS_PASSWORD)=' .env)
+for line in (grep -E '^(POSTGRES_USER|POSTGRES_PASSWORD|POSTGRES_HOST|POSTGRES_PORT|POSTGRES_DB|REDIS_PASSWORD)=' .env.dev)
     set -l key (string replace -r '=.*' '' $line)
     set -l val (string replace -r '^[^=]+=' '' $line)
     switch $key

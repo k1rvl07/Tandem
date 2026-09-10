@@ -1,4 +1,5 @@
 ENV ?= dev
+ENV_FILE := .env.$(ENV)
 
 ifeq ($(ENV),dev)
 	COMPOSE_FILE := docker-compose.yml
@@ -6,11 +7,11 @@ else
 	COMPOSE_FILE := docker-compose.prod.yml
 endif
 
-COMPOSE = docker compose -f $(COMPOSE_FILE)
+COMPOSE = docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE)
 
-POSTGRES_USER ?= $(shell grep '^POSTGRES_USER=' .env 2>/dev/null | cut -d= -f2-)
-POSTGRES_PASSWORD ?= $(shell grep '^POSTGRES_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)
-POSTGRES_DB ?= $(shell grep '^POSTGRES_DB=' .env 2>/dev/null | cut -d= -f2-)
+POSTGRES_USER ?= $(shell grep '^POSTGRES_USER=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+POSTGRES_PASSWORD ?= $(shell grep '^POSTGRES_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+POSTGRES_DB ?= $(shell grep '^POSTGRES_DB=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 
 .PHONY: help
 help: ## Show available commands
@@ -74,11 +75,13 @@ test-integration: ## Run backend repo tests against local Postgres (require TEST
 
 .PHONY: prod-up
 prod-up: COMPOSE_FILE := docker-compose.prod.yml
+prod-up: ENV_FILE := .env.prod
 prod-up: ## Start production stack (infra + apps)
 	$(COMPOSE) up -d
 
 .PHONY: prod-down
 prod-down: COMPOSE_FILE := docker-compose.prod.yml
+prod-down: ENV_FILE := .env.prod
 prod-down: ## Stop production stack
 	$(COMPOSE) down
 
