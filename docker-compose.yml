@@ -58,7 +58,7 @@ services:
       - tandem-net
 
   minio-init:
-    image: minio/mc:RELEASE.2024-11-21T17-21-54Z
+    image: quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
     container_name: tandem-minio-init
     depends_on:
       minio:
