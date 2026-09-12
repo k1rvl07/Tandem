@@ -37,7 +37,7 @@ services:
       - tandem-net
 
   minio:
-    image: ${MINIO_IMAGE:-minio/minio:RELEASE.2024-05-27T19-17-46Z}
+    image: ${MINIO_IMAGE:-quay.io/minio/minio:RELEASE.2024-05-27T19-17-46Z}
     container_name: tandem-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
