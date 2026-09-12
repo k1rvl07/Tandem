@@ -14,6 +14,11 @@ POSTGRES_PASSWORD ?= $(shell grep '^POSTGRES_PASSWORD=' $(ENV_FILE) 2>/dev/null 
 POSTGRES_DB ?= $(shell grep '^POSTGRES_DB=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 POSTGRES_PORT ?= $(shell grep '^POSTGRES_PORT=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 
+POSTGRES_TEST_DB ?= $(shell grep '^POSTGRES_TEST_DB=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+ifeq ($(strip $(POSTGRES_TEST_DB)),)
+	POSTGRES_TEST_DB := tandem_test
+endif
+
 # dashed to avoid collisions with postgres vars
 REDIS_ADDR ?= $(shell grep '^REDIS_ADDR=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 REDIS_PASSWORD ?= $(shell grep '^REDIS_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
@@ -72,10 +77,14 @@ build: ## Build backend and frontend
 test: ## Run backend tests
 	cd tandem-backend && go test ./...
 
+.PHONY: test-db-create
+test-db-create: ## Create the dedicated integration test database (POSTGRES_TEST_DB)
+	$(COMPOSE) exec -T postgres createdb -U $(POSTGRES_USER) -O $(POSTGRES_USER) $(POSTGRES_TEST_DB) || true
+
 .PHONY: test-integration
-test-integration: ## Run backend integration tests against local Postgres/Redis (require TEST_DATABASE_URL)
+test-integration: test-db-create ## Run backend integration tests against the dedicated test database (never the live DB)
 	cd tandem-backend && \
-		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
+		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_TEST_DB)?sslmode=disable" \
 		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
 		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
 		go test ./internal/repository/... ./internal/app/ -count=1
