@@ -35,10 +35,15 @@ jobs:
         image: quay.io/minio/minio:RELEASE.2024-05-27T19-17-46Z
         env:
           MINIO_ROOT_USER: tandem
-          MINIO_ROOT_PASSWORD: tandem
+          MINIO_ROOT_PASSWORD: secret_minio
         command: server /data --console-address ":9001"
         ports:
           - 9000:9000
+        options: >-
+          --health-cmd "mc ready local"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: "5432"
@@ -48,7 +53,7 @@ jobs:
       REDIS_ADDR: 127.0.0.1:6379
       MINIO_ENDPOINT: 127.0.0.1:9000
       MINIO_ROOT_USER: tandem
-      MINIO_ROOT_PASSWORD: tandem
+      MINIO_ROOT_PASSWORD: secret_minio
       MINIO_BUCKET: tandem-files
       JWT_SECRET: ci_secret
       ADMIN_LOGIN: admin
