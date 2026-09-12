@@ -53,6 +53,8 @@ jobs:
       JWT_SECRET: ci_secret
       ADMIN_LOGIN: admin
       ADMIN_PASSWORD: adminpass
+      E2E_ADMIN_LOGIN: admin
+      E2E_ADMIN_PASSWORD: adminpass
       CORS_ALLOWED_ORIGINS: http://localhost:5173
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +63,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
+          cache-dependency-path: tandem-backend/go.sum
       - name: generate swagger docs
         run: |
           go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
