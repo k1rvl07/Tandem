@@ -12,6 +12,11 @@ COMPOSE = docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE)
 POSTGRES_USER ?= $(shell grep '^POSTGRES_USER=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 POSTGRES_PASSWORD ?= $(shell grep '^POSTGRES_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 POSTGRES_DB ?= $(shell grep '^POSTGRES_DB=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+POSTGRES_PORT ?= $(shell grep '^POSTGRES_PORT=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+
+# dashed to avoid collisions with postgres vars
+REDIS_ADDR ?= $(shell grep '^REDIS_ADDR=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+REDIS_PASSWORD ?= $(shell grep '^REDIS_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 
 .PHONY: help
 help: ## Show available commands
@@ -68,10 +73,12 @@ test: ## Run backend tests
 	cd tandem-backend && go test ./...
 
 .PHONY: test-integration
-test-integration: ## Run backend repo tests against local Postgres (require TEST_DATABASE_URL or .env)
+test-integration: ## Run backend integration tests against local Postgres/Redis (require TEST_DATABASE_URL)
 	cd tandem-backend && \
-		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)?sslmode=disable" \
-		go test ./internal/repository/ -count=1
+		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable" \
+		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
+		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
+		go test ./internal/repository/... ./internal/app/ -count=1
 
 .PHONY: prod-up
 prod-up: COMPOSE_FILE := docker-compose.prod.yml
