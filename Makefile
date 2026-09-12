@@ -68,8 +68,16 @@ backend: ## Run backend with Air (hot-reload)
 frontend: ## Run frontend (Vite dev server)
 	cd tandem-frontend && npm run dev
 
+.PHONY: swag
+swag: ## Generate OpenAPI 3.1 docs (backend)
+	cd tandem-backend && swag init -g ./cmd/server/main.go -o ./docs --v3.1
+
+.PHONY: ensure-docs
+ensure-docs: ## Generate OpenAPI docs when missing on a fresh clone
+	@test -f tandem-backend/docs/swagger.json || (cd tandem-backend && swag init -g ./cmd/server/main.go -o ./docs --v3.1)
+
 .PHONY: build
-build: ## Build backend and frontend
+build: ensure-docs ## Build backend and frontend
 	cd tandem-backend && go build ./...
 	cd tandem-frontend && npm run build
 
@@ -105,10 +113,6 @@ prod-down: ## Stop production stack
 build-images: ## Build backend and frontend Docker images
 	docker build -t ghcr.io/k1rvl07/tandem-backend:latest tandem-backend
 	docker build -t ghcr.io/k1rvl07/tandem-frontend:latest tandem-frontend
-
-.PHONY: swag
-swag: ## Generate OpenAPI 3.1 docs (backend)
-	cd tandem-backend && swag init -g ./cmd/server/main.go -o ./docs --v3.1
 
 .PHONY: dev
 dev: ## Launch dev environment (zellij: app/infra logs + DB/API TUIs)
