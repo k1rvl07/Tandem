@@ -108,6 +108,21 @@ E2E запускаются против dev-серверов (backend :8080, Vit
 `reuseExistingServer`) и требуют Chromium:
 `npx playwright install chromium` (в `tandem-frontend`).
 
+## Индексация кода (Repowise)
+
+Кодовая база индексируется [Repowise](https://repowise.dev) — собирается база
+знаний: wiki-страницы, граф зависимостей и связей между репозиториями
+воркспейса, архитектурные решения. Индекс и машинно-специфичные артефакты
+(`.repowise/`, `.repowise-workspace.yaml`, `.repowise-workspace/`,
+`.claude/CLAUDE.md`, `.mcp.json`, `.vscode/`) в git не отслеживаются и
+регенерируются локально.
+
+- `repowise init` — полная индексация репозитория;
+- `repowise update` — инкрементальное обновление после изменений кода;
+- `repowise status` — состояние индекса по репозиториям воркспейса;
+- `repowise serve` — web-интерфейс просмотра базы знаний;
+- `repowise uninstall --dry-run` — список файлов, созданных инструментом.
+
 ## Порты
 
 | Служба | Порт |

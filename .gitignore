@@ -17,3 +17,8 @@ AGENTS.md
 .idea/
 .vscode/
 .opencode/
+.claude/
+.mcp.json
+.repowise/
+.repowise-workspace/
+.repowise-workspace.yaml
