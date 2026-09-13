@@ -98,9 +98,10 @@ Frontend — unit/интеграционные (Vitest + jsdom) и E2E (Playwrig
 
 ```sh
 cd tandem-frontend
-npm run test:run         # unit/интеграционные: 17 файлов, 144 теста
+npm run test:run         # unit/интеграционные: 27 файлов, 196 тестов
 npm run test:coverage    # то же с отчётом покрытия
-npm run test:e2e         # E2E-спеки: auth, workspace, profile, admin
+npm run test:e2e         # E2E-спеки: auth, workspace, profile, admin, home,
+                         #   realtime, task-editor, workspace-invites
 ```
 
 E2E запускаются против dev-серверов (backend :8080, Vite :5173; в
