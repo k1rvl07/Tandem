@@ -121,8 +121,8 @@ E2E запускаются против dev-серверов (backend :8080, Vit
 
 | Репозиторий | Average | Hotspot |
 |-------------|---------|---------|
-| `tandem-backend` | 7.4 | 5.7 |
-| `tandem-frontend` | 8.1 | 6.4 |
+| `tandem-backend` | 7.2 | 5.4 |
+| `tandem-frontend` | 8.7 | 7.7 |
 
 Оценки пересчитываются локально: `repowise health` (в каталоге подрепозитория),
 обновление индекса — `repowise update` после изменений кода.
