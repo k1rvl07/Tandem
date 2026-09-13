@@ -1,14 +1,16 @@
+name: tandem-prod
+
 services:
   postgres:
     image: ${POSTGRES_IMAGE_PROD:-postgres:15.4-alpine}
-    container_name: tandem-postgres
+    container_name: tandem-prod-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,11 +23,11 @@ services:
 
   redis:
     image: ${REDIS_IMAGE_PROD:-redis:7.2-alpine}
-    container_name: tandem-redis
+    container_name: tandem-prod-redis
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env.prod}"]
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -38,15 +40,15 @@ services:
 
   minio:
     image: ${MINIO_IMAGE_PROD:-quay.io/minio/minio:RELEASE.2024-05-27T19-17-46Z}
-    container_name: tandem-minio
+    container_name: tandem-prod-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${MINIO_API_PORT:-9010}:9000"
+      - "${MINIO_CONSOLE_PORT:-9011}:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -54,7 +56,7 @@ services:
 
   backend:
     image: ghcr.io/k1rvl07/tandem-backend:${TAG:-latest}
-    container_name: tandem-backend
+    container_name: tandem-prod-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -66,6 +68,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_PORT: "8080"
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
@@ -78,10 +81,11 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET:-tandem-files}
       MINIO_USE_SSL: "false"
-      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:8080}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:8081}
       MINIO_PUBLIC_USE_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
-      JWT_TTL: ${JWT_TTL:-24h}
+      JWT_TTL: ${JWT_TTL:-30m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-168h}
       ADMIN_LOGIN: ${ADMIN_LOGIN}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       BCRYPT_COST: ${BCRYPT_COST:-12}
@@ -92,12 +96,12 @@ services:
 
   frontend:
     image: ghcr.io/k1rvl07/tandem-frontend:${TAG:-latest}
-    container_name: tandem-frontend
+    container_name: tandem-prod-frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8081}:80"
     networks:
       - tandem-net
 
