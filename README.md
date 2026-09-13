@@ -8,7 +8,7 @@ Backend — Go (Gin + PostgreSQL + Redis + MinIO), фронтенд — Vue 3
 
 ## Возможности
 
-- Авторизация и регистрация (JWT), профили и аватары;
+- Авторизация (JWT); пользователей создаёт администратор, профили и аватары;
 - администрирование пользователей (роли, поиск, пагинация);
 - воркспейсы: темы, роли участников (owner/editor/member), одноразовые
   инвайты, передача владения;
@@ -98,7 +98,7 @@ Frontend — unit/интеграционные (Vitest + jsdom) и E2E (Playwrig
 
 ```sh
 cd tandem-frontend
-npm run test:run         # unit/интеграционные: 13 файлов, 91 тест
+npm run test:run         # unit/интеграционные: 17 файлов, 144 теста
 npm run test:coverage    # то же с отчётом покрытия
 npm run test:e2e         # E2E-спеки: auth, workspace, profile, admin
 ```
