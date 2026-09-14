@@ -51,6 +51,11 @@ services:
       - "${MINIO_CONSOLE_PORT:-9011}:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc alias set local http://localhost:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} >/dev/null 2>&1 && mc ready local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - tandem-net
 
@@ -64,7 +69,7 @@ services:
       redis:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_PORT: "8080"
@@ -88,6 +93,7 @@ services:
       JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-168h}
       ADMIN_LOGIN: ${ADMIN_LOGIN}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_SEED_ENABLED: ${ADMIN_SEED_ENABLED:-false}
       BCRYPT_COST: ${BCRYPT_COST:-12}
     expose:
       - "8080"

@@ -23,14 +23,6 @@ jobs:
           go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
           swag init -g ./cmd/server/main.go -o ./docs --v3.1
         working-directory: tandem-backend
-      - name: build binary artifact
-        run: |
-          CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o tandem-backend ./cmd/server
-        working-directory: tandem-backend
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tandem-backend
-          path: tandem-backend/tandem-backend
       - name: docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -75,13 +67,6 @@ jobs:
         working-directory: tandem-frontend
       - run: npm run build
         working-directory: tandem-frontend
-      - name: package dist artifact
-        run: tar -czf tandem-frontend.tar.gz -C dist .
-        working-directory: tandem-frontend
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tandem-frontend
-          path: tandem-frontend/tandem-frontend.tar.gz
       - name: docker metadata
         id: meta
         uses: docker/metadata-action@v5
