@@ -85,9 +85,27 @@ build: ensure-docs ## Build backend and frontend
 test: ## Run backend tests
 	cd tandem-backend && go test ./...
 
+.PHONY: test-coverage
+test-coverage: ## Run backend tests with coverage report
+	cd tandem-backend && go test ./... -coverprofile=coverage.out -covermode=atomic -count=1 && \
+		go tool cover -func=coverage.out | tail -5
+
+COVER_THRESHOLD ?= 85
+
 .PHONY: test-db-create
 test-db-create: ## Create the dedicated integration test database (POSTGRES_TEST_DB)
 	$(COMPOSE) exec -T postgres createdb -U $(POSTGRES_USER) -O $(POSTGRES_USER) $(POSTGRES_TEST_DB) || true
+
+.PHONY: cover
+cover: test-db-create ## Run all tests (unit + integration on tandem_test) and enforce the coverage gate
+	cd tandem-backend && \
+		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_TEST_DB)?sslmode=disable" \
+		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
+		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
+		go test ./... -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 && \
+		go tool cover -html=coverage.out -o coverage.html && \
+		COVERAGE=$$(go tool cover -func=coverage.out | tail -1 | awk '{print $$NF}' | sed 's/%//') && \
+		awk -v got="$$COVERAGE" -v want="$(COVER_THRESHOLD)" 'BEGIN { if (got+0 < want+0) { printf "COVERAGE GATE FAILED: %.2f%% < %.2f%%\n", got+0, want+0; exit 1 } printf "COVERAGE GATE PASSED: %.2f%% >= %.2f%%\n", got+0, want+0 }'
 
 .PHONY: test-integration
 test-integration: test-db-create ## Run backend integration tests against the dedicated test database (never the live DB)
@@ -95,7 +113,7 @@ test-integration: test-db-create ## Run backend integration tests against the de
 		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_TEST_DB)?sslmode=disable" \
 		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
 		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
-		go test ./internal/repository/... ./internal/app/ -count=1
+		go test ./internal/repository/... ./internal/app/ ./internal/pkg/migrations/... -count=1
 
 .PHONY: prod-up
 prod-up: COMPOSE_FILE := docker-compose.prod.yml
