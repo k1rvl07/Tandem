@@ -24,10 +24,11 @@ jobs:
           --health-retries 10
       redis:
         image: redis:7.2-alpine
+        command: redis-server --requirepass secret_redis
         ports:
           - 6379:6379
         options: >-
-          --health-cmd "redis-cli ping"
+          --health-cmd "redis-cli -a secret_redis ping"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -51,6 +52,7 @@ jobs:
       POSTGRES_PASSWORD: tandem
       POSTGRES_DB: tandem
       REDIS_ADDR: 127.0.0.1:6379
+      REDIS_PASSWORD: secret_redis
       MINIO_ENDPOINT: 127.0.0.1:9000
       MINIO_ROOT_USER: tandem
       MINIO_ROOT_PASSWORD: secret_minio
@@ -75,12 +77,56 @@ jobs:
           go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
           swag init -g ./cmd/server/main.go -o ./docs --v3.1
         working-directory: tandem-backend
+      - name: check backend formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            gofmt -l .
+            exit 1
+          fi
+        working-directory: tandem-backend
+      - name: vet backend
+        run: go vet ./...
+        working-directory: tandem-backend
+      - name: build backend
+        run: go build ./...
+        working-directory: tandem-backend
+      - name: run backend unit tests
+        run: go test ./...
+        working-directory: tandem-backend
+      - name: create integration test database
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=tandem createdb -h 127.0.0.1 -U tandem tandem_test
+      - name: run backend integration tests
+        env:
+          TEST_DATABASE_URL: postgres://tandem:tandem@127.0.0.1:5432/tandem_test?sslmode=disable
+          TEST_REDIS_ADDR: 127.0.0.1:6379
+          TEST_REDIS_PASSWORD: secret_redis
+          TEST_MINIO_ENDPOINT: 127.0.0.1:9000
+          TEST_MINIO_ROOT_USER: tandem
+          TEST_MINIO_ROOT_PASSWORD: secret_minio
+          TEST_MINIO_BUCKET: tandem-files
+        run: go test ./...
+        working-directory: tandem-backend
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: tandem-frontend/package-lock.json
       - run: npm ci
+        working-directory: tandem-frontend
+      - name: build frontend
+        run: npm run build
+        working-directory: tandem-frontend
+      - name: run frontend unit tests
+        run: npx vitest run
+        working-directory: tandem-frontend
+      - name: check frontend formatting
+        run: npm run format:check
+        working-directory: tandem-frontend
+      - name: lint frontend
+        run: npm run lint
         working-directory: tandem-frontend
       - name: install chromium
         run: npx playwright install --with-deps chromium
