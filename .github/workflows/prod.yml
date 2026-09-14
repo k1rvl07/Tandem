@@ -25,7 +25,7 @@ jobs:
         working-directory: tandem-backend
       - name: docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/k1rvl07/tandem-backend
           tags: |
@@ -69,7 +69,7 @@ jobs:
         working-directory: tandem-frontend
       - name: docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/k1rvl07/tandem-frontend
           tags: |
