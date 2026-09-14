@@ -98,10 +98,12 @@ Frontend — unit/интеграционные (Vitest + jsdom) и E2E (Playwrig
 
 ```sh
 cd tandem-frontend
-npm run test:run         # unit/интеграционные: 27 файлов, 196 тестов
+npm run test:run         # unit/интеграционные: 62 файла, 513 тестов
 npm run test:coverage    # то же с отчётом покрытия
-npm run test:e2e         # E2E-спеки: auth, workspace, profile, admin, home,
-                         #   realtime, task-editor, workspace-invites
+npm run test:e2e         # E2E-спеки: auth, workspace, workspace-invites, workspace-members,
+                         #   workspace-settings, admin, admin-crud, profile, avatar, home,
+                         #   realtime, realtime-users, task-editor, board-drag, attachments,
+                         #   due-date, accent-color
 ```
 
 E2E запускаются против dev-серверов (backend :8080, Vite :5173; в
@@ -122,8 +124,8 @@ E2E запускаются против dev-серверов (backend :8080, Vit
 
 | Репозиторий | Average | Hotspot |
 |-------------|---------|---------|
-| `tandem-backend` | 8.1 | 6.1 |
-| `tandem-frontend` | 8.7 | 7.8 |
+| `tandem-backend` | 9.08 | 8.75 |
+| `tandem-frontend` | 9.46 | 9.38 |
 
 Оценки пересчитываются локально: `repowise health` (в каталоге подрепозитория),
 обновление индекса — `repowise update` после изменений кода.
