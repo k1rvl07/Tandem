@@ -23,6 +23,11 @@ endif
 REDIS_ADDR ?= $(shell grep '^REDIS_ADDR=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 REDIS_PASSWORD ?= $(shell grep '^REDIS_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
 
+MINIO_ENDPOINT ?= $(shell grep '^MINIO_ENDPOINT=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+MINIO_ROOT_USER ?= $(shell grep '^MINIO_ROOT_USER=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+MINIO_ROOT_PASSWORD ?= $(shell grep '^MINIO_ROOT_PASSWORD=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+MINIO_BUCKET ?= $(shell grep '^MINIO_BUCKET=' $(ENV_FILE) 2>/dev/null | cut -d= -f2-)
+
 .PHONY: help
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -102,6 +107,10 @@ cover: test-db-create ## Run all tests (unit + integration on tandem_test) and e
 		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_TEST_DB)?sslmode=disable" \
 		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
 		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
+		TEST_MINIO_ENDPOINT="$(MINIO_ENDPOINT)" \
+		TEST_MINIO_ROOT_USER="$(MINIO_ROOT_USER)" \
+		TEST_MINIO_ROOT_PASSWORD="$(MINIO_ROOT_PASSWORD)" \
+		TEST_MINIO_BUCKET="$(MINIO_BUCKET)" \
 		go test ./... -coverpkg=./... -covermode=atomic -coverprofile=coverage.out -count=1 && \
 		go tool cover -html=coverage.out -o coverage.html && \
 		COVERAGE=$$(go tool cover -func=coverage.out | tail -1 | awk '{print $$NF}' | sed 's/%//') && \
@@ -113,6 +122,10 @@ test-integration: test-db-create ## Run backend integration tests against the de
 		TEST_DATABASE_URL="postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_TEST_DB)?sslmode=disable" \
 		TEST_REDIS_ADDR="$(REDIS_ADDR)" \
 		TEST_REDIS_PASSWORD="$(REDIS_PASSWORD)" \
+		TEST_MINIO_ENDPOINT="$(MINIO_ENDPOINT)" \
+		TEST_MINIO_ROOT_USER="$(MINIO_ROOT_USER)" \
+		TEST_MINIO_ROOT_PASSWORD="$(MINIO_ROOT_PASSWORD)" \
+		TEST_MINIO_BUCKET="$(MINIO_BUCKET)" \
 		go test ./internal/repository/... ./internal/app/ ./internal/pkg/migrations/... -count=1
 
 .PHONY: prod-up
