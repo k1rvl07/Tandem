@@ -87,7 +87,7 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-tandem-files}
       MINIO_USE_SSL: "false"
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:8081}
-      MINIO_PUBLIC_USE_SSL: "false"
+      MINIO_PUBLIC_USE_SSL: ${MINIO_PUBLIC_USE_SSL:-false}
       JWT_SECRET: ${JWT_SECRET}
       JWT_TTL: ${JWT_TTL:-30m}
       JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-168h}
