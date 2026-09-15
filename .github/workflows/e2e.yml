@@ -90,7 +90,7 @@ jobs:
         run: go build ./...
         working-directory: tandem-backend
       - name: run backend unit tests
-        run: go test ./...
+        run: go test -count=1 ./...
         working-directory: tandem-backend
       - name: create integration test database
         run: |
@@ -106,7 +106,7 @@ jobs:
           TEST_MINIO_ROOT_USER: tandem
           TEST_MINIO_ROOT_PASSWORD: secret_minio
           TEST_MINIO_BUCKET: tandem-files
-        run: go test ./...
+        run: go test -count=1 ./...
         working-directory: tandem-backend
       - uses: actions/setup-node@v4
         with:
