@@ -64,11 +64,11 @@ jobs:
       E2E_ADMIN_PASSWORD: adminpass
       CORS_ALLOWED_ORIGINS: http://localhost:5173
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_PAT }}
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: '1.27'
           cache-dependency-path: tandem-backend/go.sum
@@ -90,8 +90,11 @@ jobs:
       - name: build backend
         run: go build ./...
         working-directory: tandem-backend
+      - name: scan backend for known vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        working-directory: tandem-backend
       - name: run backend unit tests
-        run: go test -count=1 ./...
+        run: go test -race -count=1 ./...
         working-directory: tandem-backend
       - name: create integration test database
         run: |
@@ -109,12 +112,16 @@ jobs:
           TEST_MINIO_BUCKET: tandem-files
         run: go test -count=1 ./...
         working-directory: tandem-backend
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: tandem-frontend/package-lock.json
       - run: npm ci
+        working-directory: tandem-frontend
+      - name: scan frontend for known vulnerabilities
+        continue-on-error: true
+        run: npm audit --audit-level=high
         working-directory: tandem-frontend
       - name: build frontend
         run: npm run build
