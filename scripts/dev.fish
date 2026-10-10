@@ -11,6 +11,31 @@ cd tandem-backend
 swag init -g ./cmd/server/main.go -o ./docs --v3.1
 cd $ROOT
 
+if command -v posting >/dev/null 2>&1
+    set -l REIMPORT 0
+    if not test -d .posting
+        set REIMPORT 1
+    else
+        set -l post_yaml (find .posting -name '*.posting.yaml' -print -quit 2>/dev/null)
+        if test -z "$post_yaml"
+            set REIMPORT 1
+        else if test tandem-backend/docs/swagger.json -nt .posting/README.md
+            set REIMPORT 1
+        end
+    end
+    if test $REIMPORT -eq 1
+        echo "posting: импортирую OpenAPI-спеку в коллекцию .posting"
+        rm -rf .posting
+        python3 scripts/prepare_posting_spec.py
+        posting import .posting/swagger.import.json -o .posting >/dev/null
+        mkdir -p .posting/scripts
+        cp scripts/token_capture.py .posting/scripts/
+        python3 scripts/attach_capture.py .posting
+    end
+else
+    echo "warning: posting не установлен (uv tool install posting) — вкладка api недоступна" >&2
+end
+
 set -l PG_USER ""
 set -l PG_PASS ""
 set -l PG_HOST ""
